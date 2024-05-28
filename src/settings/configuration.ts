@@ -1,3 +1,5 @@
+import { TypeOrmModuleAsyncOptions } from '@nestjs/typeorm';
+
 enum Environments {
   DEVELOPMENT = 'DEVELOPMENT',
   STAGING = 'STAGING',
@@ -19,14 +21,12 @@ const getConfig = (
       LOCAL_HOST: environmentVariables.LOCAL_HOST || 'http://localhost:3000',
     },
 
-    databaseSettings: {
-      USE_MONGO: false,
-      HOST: environmentVariables.POPOSTGRES_HOST,
-      PORT: environmentVariables.POSTGRES_PORT,
-      USER_NAME: environmentVariables.POSTGRES_USERNAME,
-      PASSWORD: environmentVariables.POSTGRES_PASSWORD,
-      DATABASE_NAME: environmentVariables.DATA_BASE,
-    },
+    database: {
+      type: 'postgres',
+      url: environmentVariables.DATABASE_URL,
+      autoLoadEntities: true,
+      synchronize: true,
+    } as Partial<TypeOrmModuleAsyncOptions>,
 
     environmentSettings: {
       currentEnv: currentEnvironment,
@@ -44,6 +44,11 @@ const getConfig = (
       refreshTokenExpirationTime:
         environmentVariables.REFRESH_TOKEN_EXPIRATION_TIME!.toString() || `20s`,
       refreshTokenCookieMaxAge: 7 * 24 * 60 * 60 * 1000,
+    },
+
+    rateLimitSettings: {
+      limit: environmentVariables.RATE_LIMIT || 5,
+      ttl: environmentVariables.RATE_LIMIT_TTL || 10000,
     },
   };
 };
