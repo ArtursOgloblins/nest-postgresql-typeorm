@@ -5,18 +5,20 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthController } from './api/dto/auth.controller';
+import { AuthService } from './application/auth.service';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { EmailAdapter } from '../../base/email/email.adapter';
 import { EmailService } from '../../base/email/email.service';
 import { RegisterUserUseCase } from '../../../test/base/mock/register-user.usecase.mock';
-import { AuthService } from './application/auth.service';
 import { UserRegistrationConfirmationUseCase } from './application/usecases/registration-confirmation.usecase';
 import { UserPasswordRecoveryUseCase } from './application/usecases/pasword-recovery.usecase';
 import { UpdatePasswordUseCase } from './application/usecases/new-password.usecase';
 import { LoginUserUseCase } from './application/usecases/login.usecase';
 import { CreateRefreshTokenUseCase } from './application/usecases/create-refresh-token.usecase';
 import { LogoutUserUseCase } from './application/usecases/logout-user';
+import { SendUpdatedRegistrationCodeByEmail } from './application/events/handlers/registration-code-updated-event-handler';
+import { RegistrationEmailResendingUseCase } from './application/usecases/registration-email-resending.usecase';
 
 @Module({
   imports: [
@@ -44,8 +46,8 @@ import { LogoutUserUseCase } from './application/usecases/logout-user';
     EmailService,
     RegisterUserUseCase,
     UserRegistrationConfirmationUseCase,
-    // SendUpdatedRegistrationCodeByEmail,
-    // RegistrationEmailResendingUseCase,
+    SendUpdatedRegistrationCodeByEmail,
+    RegistrationEmailResendingUseCase,
     UserPasswordRecoveryUseCase,
     UpdatePasswordUseCase,
     LoginUserUseCase,

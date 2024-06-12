@@ -25,15 +25,20 @@ export class UpdatePasswordUseCase
 
     const passwordRecoveryDetails =
       await this.usersQueryRepository.getPasswordRecoveryDetails(recoveryCode);
+    console.log('passwordRecoveryDetails', passwordRecoveryDetails);
 
     if (!passwordRecoveryDetails) {
-      throw new BadRequestException([`RecoveryCode is incorrect`]);
+      throw new BadRequestException(`RecoveryCode is incorrect`);
     }
 
-    const { id, expirationDate, isValid } = passwordRecoveryDetails;
+    const {
+      user: { id },
+      expirationDate,
+      isValid,
+    } = passwordRecoveryDetails;
     const isExpired = new Date(expirationDate) > new Date();
     if (!isValid || isExpired) {
-      throw new BadRequestException([`RecoveryCode is not valid or expired`]);
+      throw new BadRequestException(`RecoveryCode is not valid or expired`);
     }
 
     const newPasswordHash = await bcrypt.hash(newPassword, 10);

@@ -6,8 +6,10 @@ import { SecurityDevicesRepository } from './infrastructure/security-device.repo
 import { GetActiveSessionsByUserQuery } from './infrastructure/queries/get-all-active-sessiouns-for-user.query';
 import { TerminateNonCurrentSessionsUseCase } from './application/usecases/terminate-non-current-sessions.usecase';
 import { TerminateSpecifiedSessionUseCase } from './application/usecases/terminate-specified-session.usecase';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { RefreshToken } from '../auth/domain/auth.refresh-token.entity';
 @Module({
-  imports: [CqrsModule],
+  imports: [CqrsModule, TypeOrmModule.forFeature([RefreshToken])],
   controllers: [SecurityDevicesController],
   providers: [
     JwtService,

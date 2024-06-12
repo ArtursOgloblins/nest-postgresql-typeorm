@@ -4,7 +4,7 @@ import { NotFoundException } from '@nestjs/common';
 import { UsersQueryRepository } from '../../infrastructure/users.query-repository';
 
 export class DeleteUseByIdCommand {
-  constructor(public readonly userId: string) {}
+  constructor(public readonly userId: number) {}
 }
 
 @CommandHandler(DeleteUseByIdCommand)

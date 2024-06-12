@@ -2,6 +2,6 @@ export class RefreshTokenInputDto {
   expiringAt: Date;
   deviceId: string;
   deviceName: string;
-  userId: string;
+  userId: number;
   ip: string;
 }

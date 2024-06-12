@@ -9,8 +9,8 @@ import { Users } from './users.entity';
 
 @Entity()
 export class UsersConfirmation {
-  @PrimaryGeneratedColumn('uuid')
-  public id: string;
+  @PrimaryGeneratedColumn()
+  public id: number;
 
   @Column({ type: 'varchar' })
   public confirmationCode: string;

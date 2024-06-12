@@ -35,17 +35,18 @@ export class CreateRefreshTokenUseCase
     const oldRefreshToken = req.cookies.refreshToken;
 
     const decodedRefreshToken = this.jwtService.decode(oldRefreshToken);
+    console.log('decodedRefreshToken', decodedRefreshToken);
 
-    const { iat, username, userEmail, deviceId, userId } = decodedRefreshToken;
-    const createdAt = new Date(iat * 1000);
+    const { exp, username, userEmail, deviceId, userId } = decodedRefreshToken;
+    const expiresAt = exp;
 
     const validationResult =
       await this.usersQueryRepository.validateRefreshToken(
-        createdAt,
+        expiresAt,
         deviceId,
         userId,
       );
-
+    console.log('validationResult', validationResult);
     if (!validationResult) {
       throw new UnauthorizedException();
     }
@@ -75,7 +76,7 @@ export class CreateRefreshTokenUseCase
 
     const decoded = this.jwtService.decode(newRefreshToken);
     const createdDate = new Date(decoded.iat * 1000);
-    const expiringAt = new Date(decoded.exp * 1000);
+    const expiringAt = decoded.exp;
 
     const updateRefreshTokenInputData: UpdateRefreshTokenInputData = {
       createdDate,

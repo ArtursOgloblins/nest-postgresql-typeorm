@@ -22,12 +22,15 @@ export class UserPasswordRecoveryUseCase
   async execute(command: UserPasswordRecoveryCommand) {
     const { email } = command;
 
-    const user =
-      await this.usersQueryRepository.getUserDataForPasswordRecovery(email);
-
+    const user = await this.usersQueryRepository.getUserByEmail(email);
+    console.log('userForRecoveryData', user);
     if (!user) {
       throw new NotFoundException('User not found');
     }
+
+    const passwordRecoveryData =
+      await this.usersQueryRepository.getUserDataForPasswordRecovery(user.id);
+    console.log('passwordRecoveryData', passwordRecoveryData);
 
     const passwordRecoveryInputData = {
       userId: user.id,
@@ -35,7 +38,7 @@ export class UserPasswordRecoveryUseCase
       expirationDate: new Date(),
     };
 
-    if (!user.passwordRecovery.confirmationCode) {
+    if (!passwordRecoveryData) {
       await this.usersRepository.registerPasswordRecovery(
         passwordRecoveryInputData,
       );
@@ -49,5 +52,7 @@ export class UserPasswordRecoveryUseCase
       passwordRecoveryInputData.confirmationCode,
       email,
     );
+
+    return { confirmationCode: passwordRecoveryInputData.confirmationCode };
   }
 }

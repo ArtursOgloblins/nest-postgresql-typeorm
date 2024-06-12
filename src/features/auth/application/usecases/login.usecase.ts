@@ -60,7 +60,7 @@ export class LoginUserUseCase implements ICommandHandler<LoginUserCommand> {
     });
 
     const decoded = this.jwtService.decode(refreshToken);
-    const expiringAt = new Date(decoded.exp * 1000);
+    const expiringAt = decoded.exp;
 
     const refreshTokenModel: RefreshTokenInputDto = {
       expiringAt: expiringAt,

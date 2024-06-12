@@ -114,11 +114,10 @@ export class AuthController {
     return this.commandBus.execute(new CreateRefreshTokenCommand(req, res));
   }
 
-  @UseGuards(AuthGuard('local'))
-  @UseGuards(ThrottlerGuard)
+  @UseGuards(ThrottlerGuard, AuthGuard('local'))
+  @Post('login')
   @Throttle({ default: rateLimit })
   @HttpCode(HttpStatus.OK)
-  @Post('login')
   async login(@Req() req: Request, @Res() res: Response) {
     await this.commandBus.execute(new LoginUserCommand(req, res));
   }
@@ -130,7 +129,7 @@ export class AuthController {
     const currentUser: CurrentUserDto = {
       email: user.userEmail,
       login: user.username,
-      userId: user.userId,
+      userId: user.userId.toString(),
     };
     return currentUser;
   }

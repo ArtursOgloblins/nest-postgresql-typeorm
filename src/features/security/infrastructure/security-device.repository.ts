@@ -24,14 +24,14 @@ export class SecurityDevicesRepository {
 
   public async getCurrentSession(
     userId: string,
-    createdAt: Date,
+    expiringAt: number,
     deviceId: string,
   ) {
     try {
       return this.refreshToken
         .createQueryBuilder('rt')
         .where('rt.userId = :userId', { userId })
-        .andWhere('rt.createdAt = :createdAt', { createdAt })
+        .andWhere('rt.expiringAt = :expiringAt', { expiringAt })
         .andWhere('rt.deviceId = :deviceId', { deviceId })
         .getMany();
     } catch (error) {
@@ -42,17 +42,17 @@ export class SecurityDevicesRepository {
 
   public async terminateNonCurrentSessions(
     userId: string,
-    createdAt: Date,
+    expiringAt: number,
     deviceId: string,
   ) {
     try {
       return this.refreshToken
-        .createQueryBuilder('rt')
+        .createQueryBuilder()
         .delete()
-        .from('refreshToken')
-        .andWhere('rt.userId = :userId', { userId })
-        .andWhere('rt.createdAt = :createdAt', { createdAt })
-        .andWhere('rt.deviceId = :deviceId', { deviceId })
+        .from('refresh_token')
+        .where('userId = :userId', { userId })
+        .andWhere('expiringAt != :expiringAt', { expiringAt })
+        .andWhere('deviceId != :deviceId', { deviceId })
         .execute();
     } catch (error) {
       console.log('Error in terminateNonCurrentSessions', error);
@@ -62,10 +62,16 @@ export class SecurityDevicesRepository {
 
   public async getSessionById(deviceId: string) {
     try {
-      return this.refreshToken
-        .createQueryBuilder('rt')
-        .where('rt.deviceId = :deviceId', { deviceId })
-        .getOne();
+      const sessionData = await this.refreshToken
+        .createQueryBuilder('refreshToken')
+        .innerJoinAndSelect('refreshToken.user', 'user')
+        .where('refreshToken.deviceId = :deviceId', { deviceId })
+        .select(['user.id', 'refreshToken.deviceId'])
+        .getMany();
+      if (sessionData.length == 0) {
+        return null;
+      }
+      return sessionData;
     } catch (error) {
       console.log('Error in getUserByConfirmationCode', error);
       throw error;
@@ -75,10 +81,10 @@ export class SecurityDevicesRepository {
   public async terminateSessionById(deviceId: string) {
     try {
       return this.refreshToken
-        .createQueryBuilder('rt')
+        .createQueryBuilder()
         .delete()
-        .from('refreshToken')
-        .andWhere('rt.deviceId = :deviceId', { deviceId })
+        .from('refresh_token')
+        .where('deviceId = :deviceId', { deviceId })
         .execute();
     } catch (error) {
       console.log('Error in terminateNonCurrentSessions', error);

@@ -23,17 +23,16 @@ export class UsersQueryRepository {
     params: UserQueryParamsDTO,
   ): Promise<PaginatedUserResponseDTO | null> {
     try {
-      const {
-        sortBy = 'createdAt',
-        sortDirection = 'desc',
-        pageNumber = 1,
-        pageSize = 10,
-        searchLoginTerm = '',
-        searchEmailTerm = '',
-      } = params;
+      const sortBy = params.sortBy || 'createdAt';
+      const sortDirection = params.sortDirection || 'desc';
+      const pageNumber = params.pageNumber || 1;
+      const pageSize = params.pageSize || 10;
+      const searchLoginTerm = params.searchLoginTerm || '';
+      const searchEmailTerm = params.searchEmailTerm || '';
       const validSortColumns = {
         createdAt: 'createdAt',
-        login: 'Login',
+        login: 'login',
+        email: 'email',
       };
 
       const validSortDirections = ['asc', 'desc'];
@@ -46,8 +45,8 @@ export class UsersQueryRepository {
 
       const [users, totalCount] = await this.users.findAndCount({
         where: [
-          { isDeleted: null, login: ILike(`%${searchLoginTerm}%`) },
-          { isDeleted: null, email: ILike(`%${searchEmailTerm}%`) },
+          { isDeleted: false, login: ILike(`%${searchLoginTerm}%`) },
+          { isDeleted: false, email: ILike(`%${searchEmailTerm}%`) },
         ],
         order: { [sortByColumn]: sortOrder.toUpperCase() as 'ASC' | 'DESC' },
         take: pageSize,
@@ -85,7 +84,7 @@ export class UsersQueryRepository {
       return this.users
         .createQueryBuilder('u')
         .leftJoinAndSelect('u.confirmation', 'umc')
-        .where('u.email = :loginOrEmail', {
+        .where('u.email = :email', {
           email,
         })
         .select([
@@ -93,6 +92,7 @@ export class UsersQueryRepository {
           'u.password',
           'u.login',
           'u.email',
+          'u.createdAt',
           'umc.isConfirmed',
           'umc.confirmationCode',
         ])
@@ -103,7 +103,7 @@ export class UsersQueryRepository {
     }
   }
 
-  public async getUserById(userId: string): Promise<Users | null> {
+  public async getUserById(userId: number): Promise<Users | null> {
     try {
       const user = await this.users.findOneBy({ id: userId, isDeleted: false });
       return user || null;
@@ -115,7 +115,7 @@ export class UsersQueryRepository {
 
   public async findByLoginOrEmail(loginOrEmail: string) {
     try {
-      return this.users
+      const user = await this.users
         .createQueryBuilder('u')
         .leftJoinAndSelect('u.confirmation', 'umc')
         .where('u.login = :loginOrEmail OR u.email = :loginOrEmail', {
@@ -130,6 +130,8 @@ export class UsersQueryRepository {
           'umc.confirmationCode',
         ])
         .getOne();
+      console.log('User found:', user);
+      return user;
     } catch (error) {
       console.log('Error in findByLoginOrEmail', error);
       throw error;
@@ -168,14 +170,12 @@ export class UsersQueryRepository {
     }
   }
 
-  public async getUserDataForPasswordRecovery(email: string) {
+  public async getUserDataForPasswordRecovery(userId: number) {
     try {
-      return this.users
-        .createQueryBuilder('u')
-        .innerJoinAndSelect('u.passwordRecovery', 'pr')
-        .where('u.isDeleted = :isDeleted', { isDeleted: false })
-        .andWhere('u.email = :email', { email })
-        .select(['u.id', 'pr.confirmationCode'])
+      return this.passwordRecoveryRepository
+        .createQueryBuilder('pr')
+        .where('pr.userId = :userId', { userId })
+        .select(['pr.confirmationCode'])
         .getOne();
     } catch (error) {
       console.log('Error in getUserDataForPasswordRecovery', error);
@@ -198,17 +198,17 @@ export class UsersQueryRepository {
   }
 
   public async validateRefreshToken(
-    createdAt: Date,
+    expiringAt: Date,
     deviceId: string,
     userId: string,
   ) {
     try {
       return this.refreshToken
         .createQueryBuilder('rt')
-        .select(['rt.userId'])
-        .where('pr.userId = :userId', { userId })
-        .andWhere('pr.deviceId = :deviceId', { deviceId })
-        .andWhere('pr.createdAt = :createdAt', { createdAt })
+        .select(['rt.deviceName'])
+        .where('rt.userId = :userId', { userId })
+        .andWhere('rt.deviceId = :deviceId', { deviceId })
+        .andWhere('rt.expiringAt = :expiringAt', { expiringAt })
         .getOne();
     } catch (error) {
       console.log('Error in getPasswordRecoveryDetails', error);

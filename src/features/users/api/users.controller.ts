@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseIntPipe,
   Post,
   Query,
   Req,
@@ -54,7 +55,6 @@ export class UserController {
       password,
       path,
     };
-
     return this.commandBus.execute(
       new RegisterUserCommand(registerUserInputData),
     );
@@ -62,7 +62,7 @@ export class UserController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  deleteUserById(@Param('id') userId: string) {
+  deleteUserById(@Param('id', ParseIntPipe) userId: number) {
     return this.commandBus.execute<DeleteUseByIdCommand, void>(
       new DeleteUseByIdCommand(userId),
     );

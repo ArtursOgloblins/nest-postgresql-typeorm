@@ -29,13 +29,13 @@ export class TerminateNonCurrentSessionsUseCase
     }
 
     const decodedRefreshToken = await this.jwtService.decode(refreshToken);
-    const { iat, deviceId, userId } = decodedRefreshToken;
-    const createdAt = new Date(iat * 1000);
+    const { exp, deviceId, userId } = decodedRefreshToken;
+    const expiringAt = exp;
 
     const currentSession =
       await this.securityDevicesRepository.getCurrentSession(
         userId,
-        createdAt,
+        expiringAt,
         deviceId,
       );
 
@@ -46,7 +46,7 @@ export class TerminateNonCurrentSessionsUseCase
     const removedNonCurrentSessions =
       await this.securityDevicesRepository.terminateNonCurrentSessions(
         userId,
-        createdAt,
+        expiringAt,
         deviceId,
       );
 

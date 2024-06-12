@@ -2,7 +2,6 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -10,11 +9,14 @@ import {
 import { UsersConfirmation } from './users-confirmation.entity';
 import { PasswordRecovery } from '../../auth/domain/auth.password-recovery.entity';
 import { RefreshToken } from '../../auth/domain/auth.refresh-token.entity';
+import { Comments } from '../../comments/domain/commnets.entity';
+import { Likes } from '../../likes/domain/likes.entity';
+import { Posts } from '../../posts/domain/posts.entity';
 
 @Entity()
 export class Users {
-  @PrimaryGeneratedColumn('uuid')
-  public id: string;
+  @PrimaryGeneratedColumn()
+  public id: number;
 
   @Column({ type: 'varchar' })
   public login: string;
@@ -39,4 +41,13 @@ export class Users {
 
   @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
   public refreshToken: RefreshToken[];
+
+  @OneToMany(() => Posts, (post) => post.user)
+  public posts: Posts[];
+
+  @OneToMany(() => Comments, (comment) => comment.user)
+  public comments: Comments[];
+
+  @OneToMany(() => Likes, (like) => like.user)
+  public likes: Likes[];
 }

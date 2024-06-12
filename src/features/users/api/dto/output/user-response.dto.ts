@@ -7,7 +7,7 @@ export class UserResponseDTO {
   public createdAt: Date;
 
   public constructor(user: Users) {
-    this.id = user.id;
+    this.id = user.id.toString();
     this.login = user.login;
     this.email = user.email;
     this.createdAt = user.createdAt;

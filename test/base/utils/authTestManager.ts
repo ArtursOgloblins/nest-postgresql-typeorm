@@ -2,9 +2,13 @@ import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { RegisterUserDTO } from '../../../src/features/users/api/dto/input/register-user.dto';
 import { ConfirmationCodeDto } from '../../../src/features/auth/api/dto/input/confirmation-code.dto';
+import { UsersQueryRepository } from '../../../src/features/users/infrastructure/users.query-repository';
 
 export class AuthTestManager {
-  constructor(protected readonly app: INestApplication) {}
+  constructor(
+    protected readonly app: INestApplication,
+    private usersQueryRepository: UsersQueryRepository,
+  ) {}
 
   USER_ONE_INPUT_DATA: RegisterUserDTO = {
     login: 'JohnDoe',
@@ -51,14 +55,68 @@ export class AuthTestManager {
     return response;
   }
 
-  // async loginUser(credentials: any) {
-  //   const response = await request(this.app.getHttpServer())
-  //     .post(`/auth/login`)
-  //     .send(credentials);
-  //   if (response.status !== 200) {
-  //     console.error(response.body);
-  //   }
-  //   expect(response.status).toBe(200);
-  //   return response.body.accessToken;
-  // }
+  async resendConfirmationCode(userEmail: string) {
+    const response = await request(this.app.getHttpServer())
+      .post(`/auth/registration-email-resending`)
+      .send({ email: userEmail });
+    if (response.status !== 204) {
+      console.error(response.body);
+    }
+    expect(response.status).toBe(204);
+    return response;
+  }
+
+  async sendPasswordRecoveryRequest(userEmail: string) {
+    console.log('userEmail', userEmail);
+    const response = await request(this.app.getHttpServer())
+      .post(`/auth/password-recovery`)
+      .send({ email: userEmail });
+    if (response.status !== 204) {
+      console.error(response.body);
+    }
+    const recoveryCode = await this.getPasswordRecoveryData(userEmail);
+    expect(response.status).toBe(204);
+    return recoveryCode.confirmationCode;
+  }
+
+  async getPasswordRecoveryData(userEmail: string) {
+    const user = await this.usersQueryRepository.getUserByEmail(userEmail);
+    return await this.usersQueryRepository.getUserDataForPasswordRecovery(
+      user.id,
+    );
+  }
+
+  async changeUserPassword(code: string, newPass: string) {
+    const response = await request(this.app.getHttpServer())
+      .post(`/auth/new-password`)
+      .send({ recoveryCode: code, newPassword: newPass });
+    if (response.status !== 204) {
+      console.error(response.body);
+    }
+    expect(response.status).toBe(204);
+  }
+
+  async loginUser(credentials: any) {
+    const response = await request(this.app.getHttpServer())
+      .post(`/auth/login`)
+      .send(credentials);
+    if (response.status !== 200) {
+      console.error(response.body);
+    }
+    expect(response.status).toBe(200);
+    return response.body.accessToken;
+  }
+
+  async getCurrentUserInfo(jwt: string) {
+    const response = await request(this.app.getHttpServer())
+      .get(`/auth/me`)
+      .set('Authorization', `Bearer ${jwt}`);
+    if (response.status !== 200) {
+      console.error(response.body);
+    }
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('email', expect.any(String));
+    expect(response.body).toHaveProperty('login', expect.any(String));
+    expect(response.body).toHaveProperty('userId', expect.any(String));
+  }
 }

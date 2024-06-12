@@ -25,7 +25,8 @@ const getConfig = (
       type: 'postgres',
       url: environmentVariables.DATABASE_URL,
       autoLoadEntities: true,
-      synchronize: true,
+      synchronize: false,
+      logging: ['query'],
     } as Partial<TypeOrmModuleAsyncOptions>,
 
     environmentSettings: {

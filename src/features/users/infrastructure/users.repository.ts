@@ -29,8 +29,14 @@ export class UsersRepository {
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
-      const { login, email, passwordHash, confirmationCode, expirationDate } =
-        inputData;
+      const {
+        login,
+        email,
+        passwordHash,
+        confirmationCode,
+        expirationDate,
+        isConfirmed,
+      } = inputData;
 
       const newUser = this.usersRepository.create({
         login,
@@ -43,6 +49,7 @@ export class UsersRepository {
         user: savedUser,
         confirmationCode,
         expirationDate,
+        isConfirmed,
       });
       await queryRunner.manager.save(newConfirmation);
       await queryRunner.commitTransaction();
@@ -55,7 +62,7 @@ export class UsersRepository {
     }
   }
 
-  public async deleteUserById(userId: string): Promise<void> {
+  public async deleteUserById(userId: number): Promise<void> {
     try {
       await this.usersRepository.update(userId, { isDeleted: true });
     } catch (error) {
@@ -63,7 +70,7 @@ export class UsersRepository {
     }
   }
 
-  public async updateUserConfirmationStatus(userId: string) {
+  public async updateUserConfirmationStatus(userId: number) {
     try {
       return await this.usersConfirmationRepository
         .createQueryBuilder('uc')
@@ -78,7 +85,7 @@ export class UsersRepository {
   }
 
   public async updateUserConfirmationCode(
-    userId: string,
+    userId: number,
     confirmationCode: string,
   ) {
     return await this.usersConfirmationRepository
@@ -92,13 +99,16 @@ export class UsersRepository {
   public async registerPasswordRecovery(inputData: passwordRecoveryInputData) {
     try {
       const { userId, confirmationCode, expirationDate } = inputData;
+      const user = await this.usersRepository.findOne({
+        where: { id: userId },
+      });
       await this.passwordRecoveryRepository
         .createQueryBuilder()
         .insert()
         .into('PasswordRecovery')
         .values([
           {
-            userId: userId,
+            user: user,
             confirmationCode: confirmationCode,
             expirationDate: expirationDate,
           },
@@ -129,7 +139,7 @@ export class UsersRepository {
     }
   }
 
-  public async updateUserPassword(userId: string, passwordHash: string) {
+  public async updateUserPassword(userId: number, passwordHash: string) {
     try {
       await this.usersRepository
         .createQueryBuilder('u')
@@ -159,15 +169,18 @@ export class UsersRepository {
   public async registerRefreshToken(inputData: RefreshTokenInputDto) {
     try {
       const { expiringAt, deviceId, deviceName, userId, ip } = inputData;
+      const user = await this.usersRepository.findOne({
+        where: { id: userId },
+      });
       return this.refreshToken
         .createQueryBuilder()
         .insert()
         .into('RefreshToken')
         .values([
           {
+            user: user,
             deviceName: deviceName,
             ip: ip,
-            userId: userId,
             deviceId: deviceId,
             expiringAt: expiringAt,
           },
@@ -195,15 +208,19 @@ export class UsersRepository {
     }
   }
 
-  public async logoutUser(createdAt: Date, deviceId: string, userId: string) {
+  public async logoutUser(
+    expiringAt: number,
+    deviceId: string,
+    userId: string,
+  ) {
     try {
       return this.refreshToken
         .createQueryBuilder()
         .delete()
-        .from('refreshToken')
+        .from('refresh_token')
         .where('userId = :userId', { userId })
         .andWhere('deviceId = :deviceId', { deviceId })
-        .andWhere('createdAt = :createdAt', { createdAt })
+        .andWhere('expiringAt = :expiringAt', { expiringAt })
         .execute();
     } catch (error) {
       console.log('Error in refreshToken', error);

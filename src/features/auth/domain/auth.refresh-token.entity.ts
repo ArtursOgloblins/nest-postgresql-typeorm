@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -17,17 +18,20 @@ export class RefreshToken {
 
   @Column()
   @Column({ type: 'varchar' })
+  @Index()
   public ip: string;
 
   @Column({ type: 'varchar' })
+  @Index()
   public deviceId: string;
 
   @CreateDateColumn({ name: 'createdAt' })
   public createdAt: Date;
 
-  @Column()
-  public expiringAt: Date;
+  @Column({ type: 'bigint' })
+  public expiringAt: number;
 
   @ManyToOne(() => Users, (user) => user.refreshToken)
+  @Index()
   public user: Users;
 }

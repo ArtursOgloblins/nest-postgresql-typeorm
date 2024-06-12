@@ -26,12 +26,13 @@ export class LogoutUserUseCase implements ICommandHandler<LogoutUserCommand> {
 
     const decodedRefreshToken = await this.jwtService.decode(refreshToken);
 
-    const { iat, deviceId, userId } = decodedRefreshToken;
-    const createdAt = new Date(iat * 1000);
+    const { exp, deviceId, userId } = decodedRefreshToken;
+    const expiringAt = exp;
+    console.log('decodedRefreshToken', decodedRefreshToken);
 
     const validationResult =
       await this.usersQueryRepository.validateRefreshToken(
-        createdAt,
+        expiringAt,
         deviceId,
         userId,
       );
@@ -41,7 +42,7 @@ export class LogoutUserUseCase implements ICommandHandler<LogoutUserCommand> {
     }
 
     const removedLoginDataFromBd = await this.usersRepository.logoutUser(
-      createdAt,
+      expiringAt,
       deviceId,
       userId,
     );

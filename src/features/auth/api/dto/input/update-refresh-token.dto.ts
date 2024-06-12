@@ -1,6 +1,6 @@
 export class UpdateRefreshTokenInputData {
   createdDate: Date;
-  expiringAt: Date;
+  expiringAt: number;
   deviceId: string;
   userId: string;
 }

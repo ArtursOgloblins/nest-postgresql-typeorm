@@ -40,7 +40,7 @@ export class UsersSaTestManager {
       console.error(response.body);
     }
     expect(response.status).toBe(201);
-    expect(response.body).toHaveProperty('id');
+    expect(response.body).toHaveProperty('id', expect.any(String));
     expect(response.body).toHaveProperty('login', createModel.login);
     expect(response.body).toHaveProperty('email', createModel.email);
     expect(response.body).toHaveProperty('createdAt');

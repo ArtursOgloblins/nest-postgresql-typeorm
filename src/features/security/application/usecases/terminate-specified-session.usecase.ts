@@ -45,7 +45,7 @@ export class TerminateSpecifiedSessionUseCase
       throw new NotFoundException(`Session not found`);
     }
 
-    if (sessionToDelete[0].UserId !== userId) {
+    if (sessionToDelete[0].user.id !== userId) {
       throw new ForbiddenException();
     }
 

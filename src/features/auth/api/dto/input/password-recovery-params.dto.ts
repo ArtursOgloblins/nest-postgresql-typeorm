@@ -1,5 +1,5 @@
 export interface passwordRecoveryInputData {
-  userId: string;
+  userId: number;
   confirmationCode: string;
   expirationDate: Date;
 }
