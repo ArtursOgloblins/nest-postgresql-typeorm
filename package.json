@@ -18,8 +18,10 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "cross-env ENV=TESTING jest --config ./test/jest-e2e.json",
+    "test:int": "cross-env ENV=TESTING jest -i --no-cache --watch --config jest-int.json",
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d typeorm.config.ts",
-    "migration:run": "typeorm-ts-node-commonjs migration:run -d typeorm.config.ts"
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d typeorm.config.ts",
+    "migration:revert": "cross-env NODE_ENV=development typeorm-ts-node-commonjs migration:revert -d typeorm.config.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.8",

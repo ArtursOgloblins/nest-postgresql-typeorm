@@ -6,6 +6,8 @@ import { BlogQueryParamsDTO } from '../api/dto/input/blogs-query-params.dto';
 import { PaginatedBlogsResponseDTO } from '../api/dto/output/paginated-blogs-response.dto';
 import { BlogResponseDTO } from '../api/dto/output/blogs-response.dto';
 import { Posts } from '../../posts/domain/posts.entity';
+import { BlogsSaResponseDTO } from '../api/dto/output/blogs-sa-response.dto';
+import { PaginatedBlogsSaResponseDTO } from '../api/dto/output/paginated-sa-blogs-response.dto';
 
 @Injectable()
 export class BlogsQueryRepository {
@@ -16,6 +18,7 @@ export class BlogsQueryRepository {
 
   public async findBlogs(
     params: BlogQueryParamsDTO,
+    userId: number,
   ): Promise<PaginatedBlogsResponseDTO> | null {
     try {
       const sortBy = params.sortBy || 'createdAt';
@@ -37,7 +40,12 @@ export class BlogsQueryRepository {
         : 'desc';
 
       const [blogs, totalCount] = await this.blogsRepository.findAndCount({
-        where: [{ name: ILike(`%${searchNameTerm}%`) }],
+        where: [
+          {
+            name: ILike(`%${searchNameTerm}%`),
+            owner: { id: userId },
+          },
+        ],
         order: { [sortByColumn]: sortOrder.toUpperCase() as 'ASC' | 'DESC' },
         take: pageSize,
         skip: skipAmount,
@@ -63,10 +71,65 @@ export class BlogsQueryRepository {
     }
   }
 
+  public async findBlogsSuperAdmin(
+    params: BlogQueryParamsDTO,
+  ): Promise<PaginatedBlogsSaResponseDTO> | null {
+    try {
+      const sortBy = params.sortBy || 'createdAt';
+      const sortDirection = params.sortDirection || 'desc';
+      const pageNumber = params.pageNumber || 1;
+      const pageSize = params.pageSize || 10;
+      const searchNameTerm = params.searchNameTerm || '';
+      const validSortColumns = {
+        createdAt: 'createdAt',
+        name: 'name',
+      };
+
+      const validSortDirections = ['asc', 'desc'];
+      const skipAmount = (pageNumber - 1) * pageSize;
+
+      const sortByColumn = validSortColumns[sortBy] || 'createdAt';
+      const sortOrder = validSortDirections.includes(sortDirection)
+        ? sortDirection
+        : 'desc';
+
+      const [blogs, totalCount] = await this.blogsRepository
+        .createQueryBuilder('b')
+        .leftJoinAndSelect('b.owner', 'u')
+        .where('b.name ILIKE :searchNameTerm', {
+          searchNameTerm: `%${searchNameTerm}%`,
+        })
+        .orderBy(`b.${sortByColumn}`, sortOrder.toUpperCase() as 'ASC' | 'DESC')
+        .skip(skipAmount)
+        .take(pageSize)
+        .getManyAndCount();
+
+      const mappedBlogs = blogs.map((blog) => new BlogsSaResponseDTO(blog));
+
+      return {
+        pagesCount: Math.ceil(totalCount / pageSize),
+        page: +pageNumber,
+        pageSize: +pageSize,
+        totalCount: totalCount,
+        items: mappedBlogs,
+      };
+    } catch (error) {
+      console.log('Error in findBlogs', error);
+      if (Array.isArray(error.message)) {
+        error.message.forEach((m: string) => console.log(m));
+      } else {
+        console.log(error.message);
+      }
+      return null;
+    }
+  }
+
   public async findById(blogId: number) {
     try {
       return this.blogsRepository
         .createQueryBuilder('b')
+        .leftJoin('b.owner', 'u')
+        .addSelect(['u.id', 'u.login'])
         .where('b.id = :blogId', { blogId })
         .getOne();
     } catch (error) {

@@ -12,14 +12,18 @@ import { DeleteBlogByIdUseCase } from './application/usecases/delete-blog.usecas
 import { UpdateBlogUseCase } from './application/usecases/update-blog.usecase';
 import { Posts } from '../posts/domain/posts.entity';
 import { PostsModule } from '../posts/posts.module';
+import { BindUserToBlogUseCase } from './application/usecases/bind-user-to-blog.usecase';
+import { UsersModule } from '../users/users.module';
+import { BlogsBloggerController } from './api/blogs.blogger.controller';
 
 @Module({
   imports: [
     CqrsModule,
     forwardRef(() => PostsModule),
     TypeOrmModule.forFeature([Blogs, Posts]),
+    UsersModule,
   ],
-  controllers: [BlogsSaController, BlogsController],
+  controllers: [BlogsSaController, BlogsController, BlogsBloggerController],
   providers: [
     BlogsRepository,
     BlogsQueryRepository,
@@ -27,6 +31,7 @@ import { PostsModule } from '../posts/posts.module';
     CreateBlogUseCase,
     DeleteBlogByIdUseCase,
     UpdateBlogUseCase,
+    BindUserToBlogUseCase,
   ],
   exports: [BlogsRepository, BlogsQueryRepository, TypeOrmModule],
 })

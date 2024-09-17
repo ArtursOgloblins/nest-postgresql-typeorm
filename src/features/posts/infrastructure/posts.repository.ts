@@ -17,10 +17,7 @@ export class PostsRepository {
 
   public async registerPost(inputData: NewPostInputDataDto) {
     try {
-      const { title, shortDescription, content, blogId } = inputData;
-      const blog = await this.blogsRepository.findOne({
-        where: { id: blogId },
-      });
+      const { title, shortDescription, content, blog } = inputData;
       const result = await this.postsRepository
         .createQueryBuilder()
         .insert()

@@ -21,6 +21,7 @@ import { PaginatedPostsResponseDto } from '../../posts/api/dto/output/paginated-
 import { GetPostsByBlogId } from '../../posts/infrastructure/queries/get-all-posts-by-blog-id.query';
 import { GetUser } from '../../../infrastructure/decorators/get-user.decorator';
 import { AccessTokenPayloadDTO } from '../../auth/api/dto/input/access-token-params.dto';
+import { IFindBlogsParams } from '../interfaces/FindBlogsParams.interface';
 
 @Controller('blogs')
 export class BlogsController {
@@ -34,7 +35,16 @@ export class BlogsController {
   getBlogs(
     @Query() queryParams: BlogQueryParamsDTO,
   ): Promise<PaginatedBlogsResponseDTO> {
-    return this.queryBus.execute(new FindBlogs(queryParams));
+    const findBlogsParams: IFindBlogsParams = {
+      params: queryParams,
+      isSuperAdmin: false,
+    };
+    const admin: AccessTokenPayloadDTO = {
+      userId: '111',
+      username: 'admin',
+      userEmail: 'admin@admin.com',
+    };
+    return this.queryBus.execute(new FindBlogs(findBlogsParams, admin));
   }
 
   @UseGuards(OptionalAuthGuard)

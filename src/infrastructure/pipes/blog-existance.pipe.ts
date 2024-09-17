@@ -11,6 +11,7 @@ export class ValidateBlogExistencePipe implements PipeTransform {
     if (!blog) {
       throw new NotFoundException(`Blog with ID ${blogId} not found.`);
     }
+    //chekIfBlog isBoudToUser
     return value;
   }
 }

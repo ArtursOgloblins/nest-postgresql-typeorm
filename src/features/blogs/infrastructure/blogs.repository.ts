@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { NewBlogInputDataDto } from '../api/dto/input/new-blog-params.dto';
 import { Blogs } from '../domain/blogs.entity';
 import { NewBlogDto } from '../api/dto/input/new-blog.dto';
+import { Users } from '../../users/domain/users.entity';
 
 @Injectable()
 export class BlogsRepository {
@@ -12,7 +13,7 @@ export class BlogsRepository {
     private readonly blogsRepository: Repository<Blogs>,
   ) {}
 
-  public async registerBlog(inputData: NewBlogInputDataDto) {
+  public async registerBlog(inputData: NewBlogInputDataDto, user: Users) {
     try {
       const { name, description, websiteUrl, isMembership } = inputData;
       const result = await this.blogsRepository
@@ -25,6 +26,7 @@ export class BlogsRepository {
             description: description,
             websiteUrl: websiteUrl,
             isMembership: isMembership,
+            owner: user,
           },
         ])
         .execute();
@@ -58,6 +60,20 @@ export class BlogsRepository {
         .execute();
     } catch (error) {
       console.log('Error in deleteBlogById', error);
+      throw error;
+    }
+  }
+
+  public async bindUserToBlog(blogId: number, userId: number): Promise<void> {
+    try {
+      await this.blogsRepository
+        .createQueryBuilder()
+        .update(Blogs)
+        .set({ owner: { id: userId } })
+        .where('id = blogId', { blogId })
+        .execute();
+    } catch (error) {
+      console.log('Error in bindUserToBlog', error);
       throw error;
     }
   }

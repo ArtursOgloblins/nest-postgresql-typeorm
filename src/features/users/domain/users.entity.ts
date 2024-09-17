@@ -12,6 +12,7 @@ import { RefreshToken } from '../../auth/domain/auth.refresh-token.entity';
 import { Comments } from '../../comments/domain/commnets.entity';
 import { Likes } from '../../likes/domain/likes.entity';
 import { Posts } from '../../posts/domain/posts.entity';
+import { Blogs } from '../../blogs/domain/blogs.entity';
 
 @Entity()
 export class Users {
@@ -41,6 +42,9 @@ export class Users {
 
   @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
   public refreshToken: RefreshToken[];
+
+  @OneToMany(() => Blogs, (blog) => blog.owner)
+  public blogs: Blogs[];
 
   @OneToMany(() => Posts, (post) => post.user)
   public posts: Posts[];

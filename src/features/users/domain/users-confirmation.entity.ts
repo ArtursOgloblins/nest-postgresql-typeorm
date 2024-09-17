@@ -2,10 +2,12 @@ import {
   Column,
   Entity,
   JoinColumn,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Users } from './users.entity';
+import { Blogs } from '../../blogs/domain/blogs.entity';
 
 @Entity()
 export class UsersConfirmation {

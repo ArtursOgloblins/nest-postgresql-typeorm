@@ -27,14 +27,18 @@ export class BlogsTestManager {
     password: 'qwerty',
   };
 
-  async addBlog(createModel: NewBlogDto) {
+  async addBlog(jwt: string, createModel: NewBlogDto) {
     const response = await request(this.app.getHttpServer())
-      .post('/sa/blogs')
-      .auth(this.CREDENTIALS.login, this.CREDENTIALS.password)
+      .post('/blogger/blogs')
+      .set('Authorization', `Bearer ${jwt}`)
       .send(createModel);
 
     if (response.status !== 201) {
-      console.error(response.body);
+      console.error(
+        `Failed to create blog: Status ${response.status} - Body:`,
+        response.body,
+      );
+      throw new Error('Blog creation failed');
     }
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty('id', expect.any(String));
