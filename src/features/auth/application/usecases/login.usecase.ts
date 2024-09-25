@@ -29,7 +29,7 @@ export class LoginUserUseCase implements ICommandHandler<LoginUserCommand> {
   async execute(command: LoginUserCommand) {
     const { req, res } = command;
     const { id, email, login } = req.user;
-    console.log(req.user);
+    console.log('req.user', req.user);
     const { ip } = req;
     const deviceName = req.headers['user-agent']
       ? req.headers['user-agent']

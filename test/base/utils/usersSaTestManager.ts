@@ -1,7 +1,10 @@
 import { RegisterUserDTO } from '../../../src/features/users/api/dto/input/register-user.dto';
 import * as request from 'supertest';
 import { INestApplication } from '@nestjs/common';
-import { UserQueryParamsDTO } from '../../../src/features/users/api/dto/input/users-queryParams.dto';
+import {
+  BanStatus,
+  UserQueryParamsDTO,
+} from '../../../src/features/users/api/dto/input/users-queryParams.dto';
 
 interface Credentials {
   login: string;
@@ -28,6 +31,7 @@ export class UsersSaTestManager {
     pageSize: 10,
     searchLoginTerm: '',
     searchEmailTerm: '',
+    banStatus: BanStatus.ALL,
   };
 
   async registerUser(createModel: RegisterUserDTO) {

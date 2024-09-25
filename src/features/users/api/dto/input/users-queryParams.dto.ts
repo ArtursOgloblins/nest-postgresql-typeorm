@@ -1,6 +1,12 @@
 import { IsOptional, IsString, IsInt, Min, IsIn } from 'class-validator';
 import { Transform } from 'class-transformer';
 
+export enum BanStatus {
+  ALL = 'all',
+  BANNED = 'banned',
+  NOT_BANNED = 'notBanned',
+}
+
 export class UserQueryParamsDTO {
   @IsOptional()
   @IsString()
@@ -33,4 +39,9 @@ export class UserQueryParamsDTO {
   @IsString()
   @Transform(({ value }) => value ?? '')
   searchEmailTerm: string;
+
+  @IsOptional()
+  @IsIn(Object.values(BanStatus))
+  @Transform(({ value }) => value ?? BanStatus.ALL)
+  banStatus: BanStatus;
 }

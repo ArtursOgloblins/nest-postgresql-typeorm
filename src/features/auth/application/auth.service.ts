@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UsersQueryRepository } from '../../users/infrastructure/users.query-repository';
 
@@ -14,9 +14,14 @@ export class AuthService {
       return null;
     }
 
-    const { id, password, confirmation, login, email } = user;
+    const { id, password, confirmation, login, email, bans } = user;
     const isPasswordValid = await bcrypt.compare(pass, password);
-    console.log('Password is valid:', isPasswordValid);
+
+    const activeBan = bans?.find((ban) => ban.isActiveBan);
+    if (activeBan) {
+      console.log('User is banned for reason:', activeBan.banReason);
+      throw new UnauthorizedException('User is banned');
+    }
 
     if (id && isPasswordValid) {
       if (confirmation.isConfirmed) {

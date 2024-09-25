@@ -41,6 +41,7 @@ export class CommentsQueryRepository {
       const queryBuilder = this.commentsRepository
         .createQueryBuilder('comment')
         .leftJoinAndSelect('comment.user', 'user')
+        .leftJoin('user.bans', 'ub', 'ub.isActiveBan = true')
         .leftJoin(
           'likes',
           'like',
@@ -48,14 +49,15 @@ export class CommentsQueryRepository {
           { entityType: EntityType.COMMENT },
         )
         .addSelect(
-          'SUM(CASE WHEN like.status = :likeStatus THEN 1 ELSE 0 END)',
+          'SUM(CASE WHEN like.status = :likeStatus AND ub.id IS NULL THEN 1 ELSE 0 END)',
           'likesCount',
         )
         .addSelect(
-          'SUM(CASE WHEN like.status = :dislikeStatus THEN 1 ELSE 0 END)',
+          'SUM(CASE WHEN like.status = :dislikeStatus AND ub.id IS NULL THEN 1 ELSE 0 END)',
           'dislikesCount',
         )
         .where('comment.postId = :postId', { postId })
+        .andWhere('ub.id IS NULL')
         .setParameters({
           likeStatus: LikeStatuses.Like,
           dislikeStatus: LikeStatuses.Dislike,
@@ -126,21 +128,29 @@ export class CommentsQueryRepository {
       const queryBuilder = this.commentsRepository
         .createQueryBuilder('comment')
         .leftJoinAndSelect('comment.user', 'user')
+        .leftJoin('user.bans', 'userBan', 'userBan.isActiveBan = true')
         .leftJoin(
           'likes',
           'like',
           'like.entityType = :entityType AND like.entityId = comment.id',
           { entityType: EntityType.COMMENT },
         )
+        .leftJoin('like.user', 'likeUser') // Присоединяем пользователя, который поставил лайк
+        .leftJoin(
+          'likeUser.bans',
+          'likeUserBan',
+          'likeUserBan.isActiveBan = true',
+        ) // Проверяем, что пользователь, поставивший лайк, не забанен
         .addSelect(
-          'SUM(CASE WHEN like.status = :likeStatus THEN 1 ELSE 0 END)',
+          'SUM(CASE WHEN like.status = :likeStatus AND likeUserBan.id IS NULL THEN 1 ELSE 0 END)',
           'likesCount',
         )
         .addSelect(
-          'SUM(CASE WHEN like.status = :dislikeStatus THEN 1 ELSE 0 END)',
+          'SUM(CASE WHEN like.status = :dislikeStatus AND likeUserBan.id IS NULL THEN 1 ELSE 0 END)',
           'dislikesCount',
         )
         .where('comment.id = :commentId', { commentId })
+        .andWhere('userBan.id IS NULL')
         .setParameters({
           likeStatus: LikeStatuses.Like,
           dislikeStatus: LikeStatuses.Dislike,

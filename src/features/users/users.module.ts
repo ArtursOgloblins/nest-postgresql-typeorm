@@ -14,6 +14,8 @@ import { FindUsersQuery } from './infrastructure/queries/users.get-all.query';
 import { DeleteUserByIdUseCase } from './application/usecases/delete-user.usecase';
 import { PasswordRecovery } from '../auth/domain/auth.password-recovery.entity';
 import { RefreshToken } from '../auth/domain/auth.refresh-token.entity';
+import { UserBans } from './domain/banned-users.entity';
+import { BanUserUseCase } from './application/usecases/ban-user.usecase';
 
 @Module({
   imports: [
@@ -23,6 +25,7 @@ import { RefreshToken } from '../auth/domain/auth.refresh-token.entity';
       UsersConfirmation,
       PasswordRecovery,
       RefreshToken,
+      UserBans,
     ]),
   ],
   controllers: [UserController],
@@ -33,6 +36,7 @@ import { RefreshToken } from '../auth/domain/auth.refresh-token.entity';
     UsersQueryRepository,
     RegisterUserUseCase,
     DeleteUserByIdUseCase,
+    BanUserUseCase,
     FindUsersQuery,
     SendRegistrationConfirmationCodeByEmail,
   ],

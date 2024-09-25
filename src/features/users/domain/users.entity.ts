@@ -1,6 +1,7 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   OneToMany,
   OneToOne,
@@ -13,6 +14,7 @@ import { Comments } from '../../comments/domain/commnets.entity';
 import { Likes } from '../../likes/domain/likes.entity';
 import { Posts } from '../../posts/domain/posts.entity';
 import { Blogs } from '../../blogs/domain/blogs.entity';
+import { UserBans } from './banned-users.entity';
 
 @Entity()
 export class Users {
@@ -28,11 +30,11 @@ export class Users {
   @Column({ type: 'varchar' })
   public password: string;
 
-  @Column({ default: false })
-  public isDeleted: boolean;
-
   @CreateDateColumn({ name: 'createdAt' })
   public createdAt: Date;
+
+  @DeleteDateColumn()
+  public deletedAt: Date | null;
 
   @OneToOne(() => UsersConfirmation, (confirmation) => confirmation.user)
   public confirmation: UsersConfirmation;
@@ -54,4 +56,7 @@ export class Users {
 
   @OneToMany(() => Likes, (like) => like.user)
   public likes: Likes[];
+
+  @OneToMany(() => UserBans, (ban) => ban.user)
+  public bans: UserBans[];
 }

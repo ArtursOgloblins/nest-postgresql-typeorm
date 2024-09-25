@@ -54,21 +54,29 @@ export class PostsQueryRepository {
         .createQueryBuilder('posts')
         .leftJoinAndSelect('posts.blog', 'blog')
         .leftJoinAndSelect('posts.user', 'user')
+        .leftJoin('user.bans', 'userBan', 'userBan.isActiveBan = true')
         .leftJoin(
           'likes',
           'like',
           'like.entityType = :entityType AND like.entityId = posts.id',
           { entityType: EntityType.POST },
         )
+        .leftJoin('like.user', 'likeUser')
+        .leftJoin(
+          'likeUser.bans',
+          'likeUserBan',
+          'likeUserBan.isActiveBan = true',
+        )
         .addSelect(
-          'SUM(CASE WHEN like.status = :likeStatus THEN 1 ELSE 0 END)',
+          'SUM(CASE WHEN like.status = :likeStatus AND likeUserBan.id IS NULL THEN 1 ELSE 0 END)',
           'likesCount',
         )
         .addSelect(
-          'SUM(CASE WHEN like.status = :dislikeStatus THEN 1 ELSE 0 END)',
+          'SUM(CASE WHEN like.status = :dislikeStatus AND likeUserBan.id IS NULL THEN 1 ELSE 0 END)',
           'dislikesCount',
         )
         .where('posts.blogId = :blogId', { blogId })
+        .andWhere('userBan.id IS NULL')
         .setParameters({
           likeStatus: LikeStatuses.Like,
           dislikeStatus: LikeStatuses.Dislike,
@@ -98,11 +106,13 @@ export class PostsQueryRepository {
           const newestLikesQuery = await this.likesRepository
             .createQueryBuilder('like')
             .leftJoinAndSelect('like.user', 'user')
+            .leftJoin('user.bans', 'ub', 'ban.isActiveBan = true')
             .where('like.entityType = :entityType', {
               entityType: EntityType.POST,
             })
             .andWhere('like.entityId = :entityId', { entityId: post.id })
             .andWhere('status = :status', { status: LikeStatuses.Like })
+            .andWhere('ub.id IS NULL')
             .orderBy('like.createdAt', 'DESC')
             .limit(3)
             .getMany();
@@ -145,20 +155,28 @@ export class PostsQueryRepository {
         .createQueryBuilder('posts')
         .leftJoinAndSelect('posts.blog', 'blog')
         .leftJoinAndSelect('posts.user', 'user')
+        .leftJoin('user.bans', 'userBan', 'userBan.isActiveBan = true')
         .leftJoin(
           'likes',
           'like',
           'like.entityType = :entityType AND like.entityId = posts.id',
           { entityType: EntityType.POST },
         )
+        .leftJoin('like.user', 'likeUser')
+        .leftJoin(
+          'likeUser.bans',
+          'likeUserBan',
+          'likeUserBan.isActiveBan = true',
+        )
         .addSelect(
-          'SUM(CASE WHEN like.status = :likeStatus THEN 1 ELSE 0 END)',
+          'SUM(CASE WHEN like.status = :likeStatus AND likeUserBan.id IS NULL THEN 1 ELSE 0 END)',
           'likesCount',
         )
         .addSelect(
-          'SUM(CASE WHEN like.status = :dislikeStatus THEN 1 ELSE 0 END)',
+          'SUM(CASE WHEN like.status = :dislikeStatus AND likeUserBan.id IS NULL THEN 1 ELSE 0 END)',
           'dislikesCount',
         )
+        .where('userBan.id IS NULL')
         .setParameters({
           likeStatus: LikeStatuses.Like,
           dislikeStatus: LikeStatuses.Dislike,
@@ -188,11 +206,13 @@ export class PostsQueryRepository {
           const newestLikesQuery = await this.likesRepository
             .createQueryBuilder('like')
             .leftJoinAndSelect('like.user', 'user')
+            .leftJoin('user.bans', 'ub', 'ub.isActiveBan = true')
             .where('like.entityType = :entityType', {
               entityType: EntityType.POST,
             })
             .andWhere('like.entityId = :entityId', { entityId: post.id })
             .andWhere('status = :status', { status: LikeStatuses.Like })
+            .andWhere('ub.id IS NULL')
             .orderBy('like.createdAt', 'DESC')
             .limit(3)
             .getMany();
@@ -235,21 +255,29 @@ export class PostsQueryRepository {
         .createQueryBuilder('post')
         .leftJoinAndSelect('post.blog', 'blog')
         .leftJoinAndSelect('post.user', 'user')
+        .leftJoin('user.bans', 'userBan', 'userBan.isActiveBan = true')
         .leftJoin(
           'likes',
           'like',
           'like.entityType = :entityType AND like.entityId = post.id',
           { entityType: EntityType.POST },
         )
+        .leftJoin('like.user', 'likeUser')
+        .leftJoin(
+          'likeUser.bans',
+          'likeUserBan',
+          'likeUserBan.isActiveBan = true',
+        )
         .addSelect(
-          'SUM(CASE WHEN like.status = :likeStatus THEN 1 ELSE 0 END)',
+          'SUM(CASE WHEN like.status = :likeStatus AND likeUserBan.id IS NULL THEN 1 ELSE 0 END)',
           'likesCount',
         )
         .addSelect(
-          'SUM(CASE WHEN like.status = :dislikeStatus THEN 1 ELSE 0 END)',
+          'SUM(CASE WHEN like.status = :dislikeStatus AND likeUserBan.id IS NULL THEN 1 ELSE 0 END)',
           'dislikesCount',
         )
         .where('post.id = :postId', { postId })
+        .andWhere('userBan.id IS NULL')
         .setParameters({
           likeStatus: LikeStatuses.Like,
           dislikeStatus: LikeStatuses.Dislike,
@@ -275,9 +303,11 @@ export class PostsQueryRepository {
       const newestLikesQuery = await this.likesRepository
         .createQueryBuilder('like')
         .leftJoinAndSelect('like.user', 'user')
+        .leftJoin('user.bans', 'ub', 'ub.isActiveBan = true')
         .where('like.entityType = :entityType', { entityType: EntityType.POST })
         .andWhere('like.entityId = :entityId', { entityId: postId })
         .andWhere('status = :status', { status: LikeStatuses.Like })
+        .andWhere('ub.id IS NULL')
         .orderBy('like.createdAt', 'DESC')
         .limit(3)
         .getMany();

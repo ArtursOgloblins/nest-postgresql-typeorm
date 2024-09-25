@@ -8,6 +8,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Put,
   Query,
   Req,
   UseGuards,
@@ -23,6 +24,8 @@ import { UserQueryParamsDTO } from './dto/input/users-queryParams.dto';
 import { PaginatedUserResponseDTO } from './dto/output/paginated-users-response.dto';
 import { FindUsers } from '../infrastructure/queries/users.get-all.query';
 import { DeleteUseByIdCommand } from '../application/usecases/delete-user.usecase';
+import { BanUserDto } from './dto/input/ban-user.dto';
+import { BanUserCommand } from '../application/usecases/ban-user.usecase';
 
 @UseGuards(BasicAuthGuard)
 @Controller('sa/users')
@@ -58,6 +61,16 @@ export class UserController {
     return this.commandBus.execute(
       new RegisterUserCommand(registerUserInputData),
     );
+  }
+
+  @Put(':id/ban')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  banUser(
+    @Param('id', ParseIntPipe) userId: number,
+    @Body() banUserData: BanUserDto,
+  ) {
+    console.log('ban user');
+    return this.commandBus.execute(new BanUserCommand(userId, banUserData));
   }
 
   @Delete(':id')

@@ -3,7 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Repository } from 'typeorm';
 import { Users } from '../domain/users.entity';
 import { PaginatedUserResponseDTO } from '../api/dto/output/paginated-users-response.dto';
-import { UserQueryParamsDTO } from '../api/dto/input/users-queryParams.dto';
+import {
+  BanStatus,
+  UserQueryParamsDTO,
+} from '../api/dto/input/users-queryParams.dto';
 import { UserResponseDTO } from '../api/dto/output/user-response.dto';
 import { PasswordRecovery } from '../../auth/domain/auth.password-recovery.entity';
 import { RefreshToken } from '../../auth/domain/auth.refresh-token.entity';
@@ -29,10 +32,12 @@ export class UsersQueryRepository {
       const pageSize = params.pageSize || 10;
       const searchLoginTerm = params.searchLoginTerm || '';
       const searchEmailTerm = params.searchEmailTerm || '';
+      const banStatus = params.banStatus || BanStatus.ALL;
       const validSortColumns = {
         createdAt: 'createdAt',
         login: 'login',
         email: 'email',
+        banStatus: 'banStatus',
       };
 
       const validSortDirections = ['asc', 'desc'];
@@ -43,15 +48,33 @@ export class UsersQueryRepository {
         ? sortDirection
         : 'desc';
 
+      const whereConditions = [
+        { login: ILike(`%${searchLoginTerm}%`) },
+        { email: ILike(`%${searchEmailTerm}%`) },
+      ];
+
+      if (banStatus === BanStatus.BANNED) {
+        whereConditions.forEach((condition) => {
+          condition['bans'] = { isActiveBan: true };
+        });
+      } else if (banStatus === BanStatus.NOT_BANNED) {
+        whereConditions.forEach((condition) => {
+          condition['bans'] = { isActiveBan: false };
+        });
+      }
+
+      console.log('Where conditions:', whereConditions);
+
       const [users, totalCount] = await this.users.findAndCount({
-        where: [
-          { isDeleted: false, login: ILike(`%${searchLoginTerm}%`) },
-          { isDeleted: false, email: ILike(`%${searchEmailTerm}%`) },
-        ],
+        where: whereConditions,
+        relations: ['bans'],
         order: { [sortByColumn]: sortOrder.toUpperCase() as 'ASC' | 'DESC' },
         take: pageSize,
         skip: skipAmount,
       });
+      console.log('Total users found:', totalCount);
+
+      console.log('users: ', users);
 
       const sanitisedUsers = users.map((user) => new UserResponseDTO(user));
 
@@ -84,6 +107,7 @@ export class UsersQueryRepository {
       return this.users
         .createQueryBuilder('u')
         .leftJoinAndSelect('u.confirmation', 'umc')
+        .leftJoin('u.bans', 'ub')
         .where('u.email = :email', {
           email,
         })
@@ -95,6 +119,8 @@ export class UsersQueryRepository {
           'u.createdAt',
           'umc.isConfirmed',
           'umc.confirmationCode',
+          'ub.isActiveBan',
+          'ub.banReason',
         ])
         .getOne();
     } catch (error) {
@@ -105,7 +131,10 @@ export class UsersQueryRepository {
 
   public async getUserById(userId: number): Promise<Users | null> {
     try {
-      const user = await this.users.findOneBy({ id: userId, isDeleted: false });
+      const user = await this.users.findOne({
+        where: { id: userId },
+        relations: ['bans'],
+      });
       return user || null;
     } catch (error) {
       console.log(error);
@@ -118,6 +147,7 @@ export class UsersQueryRepository {
       const user = await this.users
         .createQueryBuilder('u')
         .leftJoinAndSelect('u.confirmation', 'umc')
+        .leftJoinAndSelect('u.bans', 'ub', 'ub.isActiveBan = true')
         .where('u.login = :loginOrEmail OR u.email = :loginOrEmail', {
           loginOrEmail,
         })
@@ -128,6 +158,8 @@ export class UsersQueryRepository {
           'u.email',
           'umc.isConfirmed',
           'umc.confirmationCode',
+          'ub.isActiveBan',
+          'ub.banReason',
         ])
         .getOne();
       console.log('User found:', user);
@@ -143,8 +175,7 @@ export class UsersQueryRepository {
       return await this.users
         .createQueryBuilder('u')
         .innerJoinAndSelect('u.confirmation', 'umc')
-        .where('u.isDeleted = :isDeleted', { isDeleted: false })
-        .andWhere('umc.confirmationCode = :code', { code })
+        .where('umc.confirmationCode = :code', { code })
         .andWhere('umc.isConfirmed = :isConfirmed', { isConfirmed: false })
         .andWhere('umc.expirationDate > CURRENT_TIMESTAMP')
         .getOne();
@@ -159,8 +190,7 @@ export class UsersQueryRepository {
       return this.users
         .createQueryBuilder('u')
         .innerJoinAndSelect('u.confirmation', 'umc')
-        .where('u.isDeleted = :isDeleted', { isDeleted: false })
-        .andWhere('umc.confirmationCode = :conformationCode', {
+        .where('umc.confirmationCode = :conformationCode', {
           conformationCode,
         })
         .getOne();

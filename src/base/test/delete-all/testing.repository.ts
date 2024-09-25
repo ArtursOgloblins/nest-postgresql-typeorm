@@ -41,6 +41,7 @@ export class TestingRepository {
       await queryRunner.query('DELETE FROM users_confirmation');
       await queryRunner.query('DELETE FROM password_recovery');
       await queryRunner.query('DELETE FROM refresh_token');
+      await queryRunner.query('DELETE FROM user_bans');
       await queryRunner.query('DELETE FROM comments');
       await queryRunner.query('DELETE FROM likes');
       await queryRunner.query('DELETE FROM posts');

@@ -9,6 +9,8 @@ import { PasswordRecovery } from '../../auth/domain/auth.password-recovery.entit
 import { RefreshTokenInputDto } from '../../auth/api/dto/input/refresh-token-params.dto';
 import { RefreshToken } from '../../auth/domain/auth.refresh-token.entity';
 import { UpdateRefreshTokenInputData } from '../../auth/api/dto/input/update-refresh-token.dto';
+import { UserBans } from '../domain/banned-users.entity';
+import { BanUserDto } from '../api/dto/input/ban-user.dto';
 
 @Injectable()
 export class UsersRepository {
@@ -21,6 +23,8 @@ export class UsersRepository {
     private readonly passwordRecoveryRepository: Repository<PasswordRecovery>,
     @InjectRepository(RefreshToken)
     private readonly refreshToken: Repository<RefreshToken>,
+    @InjectRepository(UserBans)
+    private readonly userBansRepository: Repository<UserBans>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -64,7 +68,7 @@ export class UsersRepository {
 
   public async deleteUserById(userId: number): Promise<void> {
     try {
-      await this.usersRepository.update(userId, { isDeleted: true });
+      await this.usersRepository.softDelete(userId);
     } catch (error) {
       console.log('Error in deleteUserById', error);
     }
@@ -224,6 +228,43 @@ export class UsersRepository {
         .execute();
     } catch (error) {
       console.log('Error in refreshToken', error);
+      throw error;
+    }
+  }
+
+  public async banUser(user: Users, banUserData: BanUserDto) {
+    const queryRunner =
+      this.userBansRepository.manager.connection.createQueryRunner();
+    await queryRunner.startTransaction();
+
+    try {
+      for (const ban of user.bans) {
+        ban.isActiveBan = false;
+        await queryRunner.manager.save(ban);
+      }
+
+      const newBan = this.userBansRepository.create({
+        user,
+        banReason: banUserData.banReason,
+        isActiveBan: banUserData.isBanned,
+      });
+      await queryRunner.manager.save(newBan);
+
+      await queryRunner.manager.delete(RefreshToken, { user: { id: user.id } });
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      console.log('Error in banUser', error);
+      throw error;
+    }
+  }
+
+  public async unBanUser(activeBan: UserBans): Promise<UserBans> {
+    try {
+      activeBan.isActiveBan = false;
+      return this.userBansRepository.save(activeBan);
+    } catch (error) {
+      console.log('Error in unBanUser', error);
       throw error;
     }
   }
